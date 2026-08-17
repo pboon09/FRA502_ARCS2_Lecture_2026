@@ -1,0 +1,4 @@
+float32 battery_voltage
+float32 battery_current
+float32 battery_percentage
+bool charging
