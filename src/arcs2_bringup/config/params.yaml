@@ -1,0 +1,28 @@
+# /simple_count/simple_count_node_2:
+#   ros__parameters:
+#     count: 0
+#     multiplier: 2
+#     publish_rate: 1.0
+#     log: False
+
+# /arcs2/simple_count_node_3:
+#   ros__parameters:
+#     count: 100
+#     multiplier: 3
+#     publish_rate: 2.0
+#     log: False
+
+/simple_count_node_1:
+  ros__parameters:
+    count: 67
+    multiplier: 5
+    publish_rate: 1.0
+    log: False
+    hello: "Hello from simple_count_node_1!"
+
+/**:
+  ros__parameters:
+    count: 11
+    multiplier: 2
+    publish_rate: 1.0
+    log: False
