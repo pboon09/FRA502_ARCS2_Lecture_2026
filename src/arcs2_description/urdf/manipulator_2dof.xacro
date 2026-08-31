@@ -1,0 +1,93 @@
+<?xml version="1.0"?>
+<robot name="manipulator_2dof" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+    <xacro:include filename="$(find arcs2_description)/urdf/inertias.xacro"/>
+    <xacro:include filename="$(find arcs2_description)/urdf/materials.xacro"/>
+
+    <xacro:property name="prismatic_min_travel" value="-0.01"/>
+    <xacro:property name="prismatic_max_travel" value="1"/>
+
+    <xacro:property name="link1_length" value="0.25"/>
+    <xacro:property name="link1_width" value="0.25"/>
+    <xacro:property name="link1_height" value="0.8"/>
+    <xacro:property name="link1_mass" value="5.0"/>
+
+    <xacro:property name="revolute_min_angle" value="-${pi/4}"/>
+    <xacro:property name="revolute_max_angle" value="${pi/4}"/>
+
+    <xacro:property name="link2_length" value="0.6"/>
+    <xacro:property name="link2_width" value="0.1"/>
+    <xacro:property name="link2_height" value="0.1"/>
+    <xacro:property name="link2_mass" value="5.0"/>
+
+    <link name="world">
+    </link>
+
+    <joint name="joint1" type="prismatic">
+        <parent link="world"/>
+        <child link="link1"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <axis xyz="0 0 1"/>
+        <limit lower="${prismatic_min_travel}" upper="${prismatic_max_travel}" effort="100" velocity="1"/>
+    </joint>
+
+    <link name="link1">
+        <visual>
+            <origin xyz="0 0 ${link1_height/2}" rpy="0 0 0"/>
+            <geometry>
+                <box size="${link1_length} ${link1_width} ${link1_height}"/>
+            </geometry>
+            <material name="blue"/>
+        </visual>
+        <collision>
+            <origin xyz="0 0 ${link1_height/2}" rpy="0 0 0"/>
+            <geometry>
+                <box size="${link1_length} ${link1_width} ${link1_height}"/>
+            </geometry>
+        </collision>
+        <xacro:inertial_box mass="${link1_mass}" x="${link1_length}" y="${link1_width}" z="${link1_height}">
+            <origin xyz="0 0 ${link1_height/2}" rpy="0 0 0"/>
+        </xacro:inertial_box>
+    </link>
+
+    <joint name="joint2" type="revolute">
+        <parent link="link1"/>
+        <child link="link2"/>
+        <origin xyz="0 0 ${link1_height}" rpy="${pi/2} 0 0"/>
+        <axis xyz="0 0 1"/>
+        <limit lower="${revolute_min_angle}" upper="${revolute_max_angle}" effort="100" velocity="1"/>
+    </joint>
+
+    <link name="link2">
+        <visual>
+            <origin xyz="${link2_length/2} ${link2_width/2} 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="${link2_length} ${link2_width} ${link2_height}"/>
+            </geometry>
+            <material name="white"/>
+        </visual>
+        <collision>
+            <origin xyz="${link2_length/2} ${link2_width/2} 0" rpy="0 0 0"/>
+            <geometry>
+                <box size="${link2_length} ${link2_width} ${link2_height}"/>
+            </geometry>
+        </collision>
+        <xacro:inertial_box mass="${link2_mass}" x="${link2_length}" y="${link2_width}" z="${link2_height}">
+            <origin xyz="${link1_length/2} ${link2_width/2} 0" rpy="0 0 0"/>
+        </xacro:inertial_box>
+    </link>
+
+    <joint name="ee" type="fixed">
+        <parent link="link2"/>
+        <child link="ee_link"/>
+        <origin xyz="${link2_length} ${link2_width/2} 0" rpy="0 0 0"/>
+    </joint>
+
+    <link name="ee_link">
+    </link>
+
+    <gazebo>
+        <static>true</static>
+    </gazebo>
+
+</robot>
