@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<robot xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+  <xacro:macro name="linear_joint" params="name">
+    <joint name="${name}">
+      <command_interface name="position">
+        <param name="min">0.0</param>
+        <param name="max">0.6</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+  </xacro:macro>
+
+  <xacro:macro name="revolute_joint" params="name">
+    <joint name="${name}">
+      <command_interface name="position">
+        <param name="min">-${pi/4}</param>
+        <param name="max">${pi/4}</param>
+      </command_interface>
+      <state_interface name="position"/>
+      <state_interface name="velocity"/>
+    </joint>
+  </xacro:macro>
+
+  <ros2_control name="GazeboSimSystem" type="system">
+    <hardware>
+      <plugin>gz_ros2_control/GazeboSimSystem</plugin>
+    </hardware>
+    <xacro:linear_joint name="joint1"/>
+    <xacro:revolute_joint name="joint2"/>
+  </ros2_control>
+
+  <gazebo>
+    <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+      <parameters>$(find arcs2_bringup)/config/manipulator_controllers.yaml</parameters>
+    </plugin>
+  </gazebo>
+
+</robot>

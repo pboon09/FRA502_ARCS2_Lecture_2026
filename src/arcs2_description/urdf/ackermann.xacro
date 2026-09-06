@@ -3,6 +3,8 @@
 
   <xacro:include filename="$(find arcs2_description)/urdf/materials.xacro"/>
   <xacro:include filename="$(find arcs2_description)/urdf/inertias.xacro"/>
+  <xacro:include filename="$(find arcs2_description)/urdf/ros2_control_ackermann.xacro"/>
+  <xacro:include filename="$(find arcs2_description)/urdf/sensors.xacro"/>
 
   <xacro:property name="chassis_x" value="0.5"/>
   <xacro:property name="chassis_y" value="0.3"/>
@@ -117,6 +119,17 @@
 
   <xacro:drive_wheel prefix="rear_left" y_sign="1"/>
   <xacro:drive_wheel prefix="rear_right" y_sign="-1"/>
+
+  <gazebo>
+    <plugin filename="gz-sim-odometry-publisher-system" name="gz::sim::systems::OdometryPublisher">
+      <odom_frame>odom</odom_frame>
+      <robot_base_frame>base_link</robot_base_frame>
+      <odom_topic>gz_odom_ground_truth</odom_topic>
+      <tf_topic>/model/ackermann_bot/tf</tf_topic>
+      <odom_publish_frequency>30</odom_publish_frequency>
+      <dimensions>2</dimensions>
+    </plugin>
+  </gazebo>
 
   <gazebo reference="chassis"><material>Gazebo/Grey</material></gazebo>
   <gazebo reference="front_left_steering_knuckle"><material>Gazebo/Orange</material></gazebo>

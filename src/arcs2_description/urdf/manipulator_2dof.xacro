@@ -3,6 +3,7 @@
 
     <xacro:include filename="$(find arcs2_description)/urdf/inertias.xacro"/>
     <xacro:include filename="$(find arcs2_description)/urdf/materials.xacro"/>
+    <xacro:include filename="$(find arcs2_description)/urdf/ros2_control_manipulator.xacro"/>
 
     <xacro:property name="prismatic_min_travel" value="-0.01"/>
     <xacro:property name="prismatic_max_travel" value="1"/>
@@ -85,9 +86,5 @@
 
     <link name="ee_link">
     </link>
-
-    <gazebo>
-        <static>true</static>
-    </gazebo>
 
 </robot>

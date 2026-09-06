@@ -30,12 +30,6 @@ def generate_launch_description():
         parameters=[{'robot_description': robot_description, 'use_sim_time': True}],
     )
 
-    joint_state_publisher = Node(
-        package='joint_state_publisher',
-        executable='joint_state_publisher',
-        parameters=[{'use_sim_time': True}],
-    )
-
     spawn_robot = Node(
         package='ros_gz_sim',
         executable='create',
@@ -50,6 +44,18 @@ def generate_launch_description():
         output='screen',
     )
 
+    joint_state_broadcaster_spawner = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['joint_state_broadcaster'],
+    )
+
+    joint_trajectory_controller_spawner = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['joint_trajectory_controller'],
+    )
+
     rviz = Node(
         package='rviz2',
         executable='rviz2',
@@ -57,11 +63,24 @@ def generate_launch_description():
         parameters=[{'use_sim_time': True}],
     )
 
+    delayed_broadcaster = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=spawn_robot,
+            on_exit=[joint_state_broadcaster_spawner, rviz],
+        )
+    )
+    delayed_trajectory_controller = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=joint_state_broadcaster_spawner,
+            on_exit=[joint_trajectory_controller_spawner],
+        )
+    )
+
     return LaunchDescription([
         gz_sim,
         robot_state_publisher,
-        joint_state_publisher,
         spawn_robot,
         bridge,
-        rviz
+        delayed_broadcaster,
+        delayed_trajectory_controller,
     ])

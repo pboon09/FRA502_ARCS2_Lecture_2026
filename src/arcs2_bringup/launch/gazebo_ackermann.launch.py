@@ -17,10 +17,12 @@ def generate_launch_description():
     xacro_file = os.path.join(pkg_description, 'urdf', 'ackermann.xacro')
     robot_description = xacro.process_file(xacro_file).toxml()
 
+    world_file = os.path.join(pkg_bringup, 'worlds', 'room.sdf')
+
     gz_sim = IncludeLaunchDescription(
         PythonLaunchDescriptionSource(
             os.path.join(pkg_ros_gz_sim, 'launch', 'gz_sim.launch.py')),
-        launch_arguments={'gz_args': '-r empty.sdf'}.items(),
+        launch_arguments={'gz_args': ['-r ', world_file]}.items(),
     )
 
     robot_state_publisher = Node(
@@ -28,12 +30,6 @@ def generate_launch_description():
         executable='robot_state_publisher',
         output='screen',
         parameters=[{'robot_description': robot_description, 'use_sim_time': True}],
-    )
-
-    joint_state_publisher = Node(
-        package='joint_state_publisher',
-        executable='joint_state_publisher',
-        parameters=[{'use_sim_time': True}],
     )
 
     spawn_robot = Node(
@@ -46,8 +42,29 @@ def generate_launch_description():
     bridge = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
-        arguments=['/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock'],
+        arguments=[
+            '/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
+            '/imu@sensor_msgs/msg/Imu[gz.msgs.IMU',
+            '/scan@sensor_msgs/msg/LaserScan[gz.msgs.LaserScan',
+            '/gz_odom_ground_truth@nav_msgs/msg/Odometry[gz.msgs.Odometry',
+            '/model/ackermann_bot/tf@tf2_msgs/msg/TFMessage[gz.msgs.Pose_V',
+        ],
+        remappings=[
+            ('/model/ackermann_bot/tf', '/tf'),
+        ],
         output='screen',
+    )
+
+    joint_state_broadcaster_spawner = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['joint_state_broadcaster'],
+    )
+
+    ackermann_steering_controller_spawner = Node(
+        package='controller_manager',
+        executable='spawner',
+        arguments=['ackermann_steering_controller'],
     )
 
     rviz = Node(
@@ -57,11 +74,24 @@ def generate_launch_description():
         parameters=[{'use_sim_time': True}],
     )
 
+    delayed_broadcaster = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=spawn_robot,
+            on_exit=[joint_state_broadcaster_spawner, rviz],
+        )
+    )
+    delayed_ackermann_controller = RegisterEventHandler(
+        event_handler=OnProcessExit(
+            target_action=joint_state_broadcaster_spawner,
+            on_exit=[ackermann_steering_controller_spawner],
+        )
+    )
+
     return LaunchDescription([
         gz_sim,
         robot_state_publisher,
-        joint_state_publisher,
         spawn_robot,
         bridge,
-        rviz,
+        delayed_broadcaster,
+        delayed_ackermann_controller,
     ])
