@@ -1,0 +1,7 @@
+numpy>=1.26
+scipy>=1.11
+sympy>=1.12
+matplotlib>=3.8
+cvxpy>=1.4
+gymnasium>=0.29
+pygame>=2.5
