@@ -40,5 +40,5 @@ cd cartpole && python3 analysis/response_plot.py
 | `model/manipulator_eq.py` | mass, Coriolis and gravity matrices |
 | `model/model.py` | symbolic linearization, continuous and discrete state space |
 | `controller/` | pole placement, LQR, MPC control laws |
-| `analysis/` | pole map, step response, interactive pole explorer |
+| `analysis/` | pole map, step response, static pole explorer |
 | `cartpole.py` | gym environment and the keyboard loop |

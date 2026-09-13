@@ -4,8 +4,8 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import numpy as np
 import matplotlib.pyplot as plt
+from scipy import signal
 import model.model as model
-from controller.pole_placement import PolePlacementController
 
 # Set to "s" to enter continuous poles, or "z" to enter discrete poles directly
 DESIGN_PLANE = "s"
@@ -37,19 +37,33 @@ def get_s_poles():
     else:
         raise ValueError("DESIGN_PLANE must be 's' or 'z', got %r" % DESIGN_PLANE)
 
-# Hand the poles to the course controller and take its gain back
-def design_controller():
-    return PolePlacementController(s_desired_poles=get_s_poles(), dt=DT)
+# Carry the chosen poles into the z-plane through the zero-order hold
+def get_z_poles():
+    if DESIGN_PLANE == "z":
+        return np.array(Z_POLES, dtype=complex)
+    return np.exp(get_s_poles() * DT)
 
-# Simulate the discrete closed-loop recursion to the cart position reference
-def simulate_discrete(K, Nbar, t_final=3.0, ref=CART_REFERENCE):
-    Ad_cl = A_d - B_d @ K
-    Bd_cl = (B_d @ Nbar).reshape(-1)
+# Zeros are invariant under state feedback, so this numerator is the closed-loop one
+def output_numerator(output_row):
+    num, _ = signal.ss2tf(A_d, B_d, output_row, np.zeros((1, 1)))
+    return np.trim_zeros(num[0], "f")
+
+# Step response of every state, built from the chosen poles and the plant zeros
+def closed_loop_response(z_poles, ref, t_final=3.0):
+    # Characteristic Polynomial
+    den = np.real(np.poly(z_poles))
+
+    numerators = [output_numerator(np.eye(4)[i:i + 1]) for i in range(4)]
+
+    # Unity DC gain so the cart position settles on the reference
+    scale = ref * np.polyval(den, 1.0) / np.polyval(numerators[0], 1.0)
+
     n_steps = int(t_final / DT)
     t = np.arange(n_steps + 1) * DT
     x = np.zeros((4, n_steps + 1))
-    for k in range(n_steps):
-        x[:, k + 1] = Ad_cl @ x[:, k] + Bd_cl * ref
+    for i in range(4):
+        _, y = signal.dstep(signal.dlti(numerators[i] * scale, den, dt=DT), n=n_steps + 1)
+        x[i, :] = np.asarray(y[0]).reshape(-1)
     return t, x
 
 # Draw the S-plane pole map
@@ -109,14 +123,11 @@ def draw_pole_response(ax, t, x):
     ax.legend(loc="upper right", fontsize=8)
 
 def build_figure():
-    controller = design_controller()
-    s_poles = np.array(controller.s_desired_poles, dtype=complex)
-    z_poles = np.array(controller.z_desired_poles, dtype=complex)
+    s_poles = get_s_poles()
+    z_poles = get_z_poles()
 
-    # Gain K
-    K, Nbar = controller.K, controller.Nbar
     ref = CART_REFERENCE
-    t, x = simulate_discrete(K, Nbar, ref=ref)
+    t, x = closed_loop_response(z_poles, ref)
 
     fig, ((ax_s, ax_z), (ax_cart, ax_pole)) = plt.subplots(2, 2, figsize=(13, 9))
 
@@ -126,8 +137,8 @@ def build_figure():
     draw_pole_response(ax_pole, t, x)
 
     fig.suptitle(
-        "Design Plane = %s | DT = %.3f s | K = %s | Nbar = %s"
-        % (DESIGN_PLANE, DT, np.array2string(K, precision=3), np.array2string(Nbar, precision=3)),
+        "Design Plane = %s | DT = %.3f s | Reference = %.2f m | max |z| = %.4f"
+        % (DESIGN_PLANE, DT, ref, float(np.max(np.abs(z_poles)))),
         fontsize=9,
     )
     fig.tight_layout()
