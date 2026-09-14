@@ -29,6 +29,15 @@ class PureContinuousCartPole(CartPoleEnv):
 
         self.action_space = gym.spaces.Box(low=-15.0, high=15.0, shape=(1,), dtype=np.float32)
 
+    # Reorder the gym state into the design state order
+    def to_design_order(self, gym_state):
+        x, x_dot, theta, theta_dot = gym_state
+        return np.array([x, theta, x_dot, theta_dot], dtype=np.float32)
+
+    def reset(self, **kwargs):
+        observation, info = super().reset(**kwargs)
+        return self.to_design_order(observation), info
+
     def step(self, action):
         assert self.action_space.contains(action), f"{action!r} ({type(action)}) invalid"
         assert self.state is not None, "Call reset before using step()"
@@ -69,7 +78,7 @@ class PureContinuousCartPole(CartPoleEnv):
         if self.render_mode == "human":
             self.render()
 
-        return np.array(self.state, dtype=np.float32), 1.0, terminated, False, {}
+        return self.to_design_order(self.state), 1.0, terminated, False, {}
 
 def build_controller(controller_type, dt):
     if controller_type == "pole_placement":
@@ -131,7 +140,7 @@ def main():
             action = controller.get_action(state, r=x_ref)
             state, reward, terminated, truncated, info = env.step(action)
 
-            print(f"\rCart Ref: {x_ref:+.3f} | Cart pos: {state[0]:+.3f} m | Pole angle: {state[2]:+.3f} rad",
+            print(f"\rCart Ref: {x_ref:+.3f} | Cart pos: {state[0]:+.3f} m | Pole angle: {state[1]:+.3f} rad",
                   end="", flush=True)
     except KeyboardInterrupt:
         print("\nInterrupted")

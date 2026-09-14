@@ -25,34 +25,44 @@ class PolePlacementController:
 
     # Loads A_d, B_d from the model unless explicit matrices were given
     def load_model(self, A_d, B_d):
-        # Implement here
-        raise NotImplementedError
+        if A_d is None or B_d is None:
+            return get_discrete_state_space_matrices(self.C, self.dt)
+        return A_d, B_d
 
     # Desired Poles
     def map_poles_to_plane(self, s_desired_poles, cart_ratio):
-        # Implement here
-        raise NotImplementedError
+        if s_desired_poles is None:
+            s_desired_poles = mirror_open_loop_poles(get_state_space_matrices()[0], cart_ratio)
+        else:
+            s_desired_poles = np.array(s_desired_poles)
+
+        z_desired_poles = np.exp(s_desired_poles * self.dt)
+        return s_desired_poles, z_desired_poles
 
     # Gain K
     def compute_gain(self):
-        # Implement here
-        raise NotImplementedError
+        k = signal.place_poles(self.A_d, self.B_d, self.z_desired_poles)
+        return k.gain_matrix
 
     # Reference Scaling Nbar
     def compute_nbar(self):
-        # Implement here
-        raise NotImplementedError
+        I = np.eye(self.A_d.shape[0])
+        return np.linalg.inv(self.C @ np.linalg.solve(I - (self.A_d - self.B_d @ self.K), self.B_d))
 
     # Control Law
     def get_action(self, state, r=0.0):
-        # Implement here
-        raise NotImplementedError
+        x = np.asarray(state, dtype=np.float64).reshape(-1, 1)
+        r = np.atleast_2d(np.asarray(r,dtype=np.float64)).reshape(-1, 1)
+        u = self.Nbar @ r - self.K @ x
+        u = np.clip(u.ravel()[0], -self.max_force, self.max_force)
+        return np.array([u], dtype=np.float32)
 
 
 # Mirrors the open-loop poles of A_c into the stable half plane
 def mirror_open_loop_poles(A_c, cart_ratio=0.4):
-    # Implement here
-    raise NotImplementedError
+    unstable_rate = float(np.max(np.linalg.eigvals(A_c).real))
+    cart_rate = cart_ratio * unstable_rate
+    return np.array([-cart_rate, -cart_rate*1.001, -unstable_rate, -unstable_rate*1.001])
 
 
 if __name__ == "__main__":

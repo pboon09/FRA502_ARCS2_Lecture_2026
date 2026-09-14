@@ -11,13 +11,15 @@ import model.model as model
 DESIGN_PLANE = "s"
 
 # Cart Position Reference
-CART_REFERENCE = 0.5
+CART_REFERENCE = 1.5
 
 # Sample Period
 DT = 0.02
 
+gramma = 1.0
+
 # Desired Poles in the S Plane
-S_POLES = []
+S_POLES = [-5.41159896*gramma,-5.41159896*gramma,-5.41159896,-5.41159896]
 
 # Desired Poles in the Z Plane
 Z_POLES = []
@@ -106,7 +108,7 @@ def draw_z_plane(ax, z_poles):
 def draw_cart_response(ax, t, x, ref):
     # Cart Response
     ax.plot(t, x[0, :], color="royalblue", linewidth=1.8, label="Cart Position (m)")
-    ax.plot(t, x[1, :], color="darkorange", linewidth=1.8, label="Cart Velocity (m/s)")
+    ax.plot(t, x[2, :], color="darkorange", linewidth=1.8, label="Cart Velocity (m/s)")
     ax.axhline(ref, color="gray", linestyle="--", linewidth=0.8, label="Reference")
     ax.set_title("Cart Response")
     ax.set_xlabel("Time (s)")
@@ -115,7 +117,7 @@ def draw_cart_response(ax, t, x, ref):
 
 def draw_pole_response(ax, t, x):
     # Pole Response
-    ax.plot(t, x[2, :], color="crimson", linewidth=1.8, label="Pole Angle (rad)")
+    ax.plot(t, x[1, :], color="crimson", linewidth=1.8, label="Pole Angle (rad)")
     ax.plot(t, x[3, :], color="seagreen", linewidth=1.8, label="Pole Angular Velocity (rad/s)")
     ax.set_title("Pole Response")
     ax.set_xlabel("Time (s)")
