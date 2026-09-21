@@ -22,28 +22,49 @@ class LQRController:
 
     # Loads A_d, B_d from the model unless explicit matrices were given
     def load_model(self, A_d, B_d):
-        # Implement here
-        raise NotImplementedError
+        if A_d is None or B_d is None:
+            return get_discrete_state_space_matrices(C_c=self.C, dt=self.dt)
+        return A_d, B_d
 
     # Bryson Rule Weights
     def build_weights(self, Q, R):
-        # Implement here
-        raise NotImplementedError
+        tol_cart_pos = 0.5
+        tol_pole_angle = 0.1
+        tol_cart_vel = 1.0
+        tol_pole_vel = 1.0
+        max_control = 15.0
+
+        Q = Q if Q is not None else np.diag([
+            1.0 / (tol_cart_pos ** 2),
+            1.0 / (tol_pole_angle ** 2),
+            1.0 / (tol_cart_vel ** 2),
+            1.0 / (tol_pole_vel ** 2)
+        ])
+
+        R = R if R is not None else np.array([
+            1.0 / (max_control ** 2)
+        ])
+
+        return Q, R
 
     # Discrete Riccati Equation
     def compute_gain(self):
-        # Implement here
-        raise NotImplementedError
+        P = scipy.linalg.solve_discrete_are(self.A_d, self.B_d, self.Q, self.R)
+        K = np.linalg.inv(self.R + self.B_d.T @ P @ self.B_d) @ (self.B_d.T @ P @ self.A_d)
+        return K
 
     # Reference Scaling Nbar
     def compute_nbar(self):
-        # Implement here
-        raise NotImplementedError
+        I = np.eye(self.A_d.shape[0])
+        return np.linalg.inv(self.C @ np.linalg.solve(I - (self.A_d - self.B_d @ self.K), self.B_d))
 
     # Control Law
     def get_action(self, state, r=0.0):
-        # Implement here
-        raise NotImplementedError
+        x = np.asarray(state, dtype=np.float64).reshape(-1, 1)
+        r = np.atleast_2d(np.asarray(r,dtype=np.float64)).reshape(-1, 1)
+        u = self.Nbar @ r - self.K @ x
+        u = np.clip(u.ravel()[0], -self.max_force, self.max_force)
+        return np.array([u], dtype=np.float32)
 
 
 if __name__ == "__main__":
