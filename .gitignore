@@ -4,3 +4,5 @@
 /log
 
 *.pyc
+.metadata
+firmware/test_uros/Debug/
